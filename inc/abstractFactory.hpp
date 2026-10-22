@@ -12,7 +12,9 @@
 #pragma once
 
 #include <meta>
+#include <type_traits>
 #include <memory>
+#include <string_view>
 
 namespace eaf {
 
@@ -25,8 +27,14 @@ namespace eaf {
     template <class Tag, class Base>
     class TaggedAbstractFactory {
 
-        template <std::meta::info R>
-        void init();
+        /**
+         * @brief Internal function to create the raw pointer to the derived class. Gets wrapped 
+         * by a smart pointer by the corresponding factory function
+         * 
+         * @param className Class name to make
+         * @return Base* 
+         */
+        Base* make(std::string_view className);
 
         public:
 
@@ -36,16 +44,7 @@ namespace eaf {
          * and are annotated with class Tag. 
          * 
          */
-        TaggedAbstractFactory();
-
-        /**
-         * @brief Construct a new Tagged Abstract Factory object that constructs objects that
-         * are derived classes of Base that are in a specific namespace. 
-         * 
-         * @param namespaceRef Reflection of a namespace to look for derived classes in
-         */
-        // template<std::meta::info namespaceRef>
-        // TaggedAbstractFactory();
+        TaggedAbstractFactory() = default;
 
         /**
          * @brief Construct a shared/unique pointer to the provided class name
@@ -53,8 +52,8 @@ namespace eaf {
          * 
          * @param classname Class name of the type to construct
          */
-        std::shared_ptr<Base> make_shared(std::string_view classname){return nullptr;}
-        std::unique_ptr<Base> make_unique(std::string_view classname){return nullptr;}
+        std::shared_ptr<Base> make_shared(std::string_view classname);
+        std::unique_ptr<Base> make_unique(std::string_view classname);
 
     };
     
@@ -90,33 +89,31 @@ namespace eaf {
 }
 
 template <typename Tag, typename Base>
-eaf::TaggedAbstractFactory<Tag, Base>::TaggedAbstractFactory(){
-    init<^^::>();
-}
+Base* eaf::TaggedAbstractFactory<Tag, Base>::make(std::string_view className){
 
-
-// template <typename Tag, typename Base>
-// template <std::meta::info R>
-// TaggedAbstractFactory<Tag, Base>::TaggedAbstractFactory(){
-//     init<R>();
-// }
-
-template <typename Tag, typename Base>
-template <std::meta::info R>
-void eaf::TaggedAbstractFactory<Tag, Base>::init(){
-    if constexpr (!std::meta::is_namespace(R)){
-        return;
-    }
     constexpr auto ctx = std::meta::access_context::unprivileged();
 
-    template for (constexpr auto cls : std::define_static_array(std::meta::members_of(R, ctx))){
-        if constexpr (std::meta::is_type(cls)){
-            static constexpr auto annotations = std::define_static_array(std::meta::annotations_of(cls));
-            if constexpr (annotations.size() == 1){
-                std::println("{} Has ONE annotation!", std::meta::display_string_of(annotations[0]));
-            } else {
-                std::println("{} has no annotations :(", std::meta::display_string_of(cls));
+    template for (constexpr auto cls : std::define_static_array(std::meta::members_of(^^::, ctx))){
+        if constexpr (std::meta::is_type(cls) && std::meta::is_complete_type(cls)){
+            static constexpr auto annotations = std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Tag));
+            using Class_t = typename [:cls:];
+            if constexpr (annotations.size() == 1 && std::is_base_of_v<Base, Class_t> ){ // , std::meta::display_string_of(^^Base)
+                if (std::meta::display_string_of(cls) == className){
+                    return new Class_t();
+                }
             }
         }
     }
+    return nullptr;
+}
+
+
+template <typename Tag, typename Base>
+std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base>::make_shared(std::string_view className){
+    return std::shared_ptr<Base>(make(className));
+}
+
+template <typename Tag, typename Base>
+std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base>::make_unique(std::string_view className){
+    return std::unique_ptr<Base>(make(className));
 }
