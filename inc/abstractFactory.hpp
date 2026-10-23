@@ -13,6 +13,7 @@
 
 #include <meta>
 #include <type_traits>
+#include <ranges>
 #include <memory>
 #include <string_view>
 
@@ -21,10 +22,11 @@ namespace eaf {
     /**
      * @brief Abstract Factory 
      * 
-     * @tparam Tag 
-     * @tparam Base 
+     * @tparam Tag: Annotation type of the tag for each class
+     * @tparam Base: Class that all tagged types must inherit from
+     * @tparam Namespace: Reflection of the namespace to look in for types
      */
-    template <class Tag, class Base>
+    template <class Tag, class Base, std::meta::info Namespace = ^^::>
     class TaggedAbstractFactory {
 
         /**
@@ -32,7 +34,7 @@ namespace eaf {
          * by a smart pointer by the corresponding factory function
          * 
          * @param className Class name to make
-         * @return Base* 
+         * @return Base* Raw pointer to the base class. Wrapped in a smart pointer immediately
          */
         Base* make(std::string_view className);
 
@@ -57,7 +59,17 @@ namespace eaf {
 
     };
     
-    
+    template <std::meta::info R>
+    consteval std::string_view getClassName(){
+        using namespace std::literals;
+        static constexpr std::string_view delim = "::"sv;
+        auto v = std::views::split(std::meta::display_string_of(R), delim)
+        | std::views::transform([](auto&& subrange){
+            return std::string_view(subrange);
+        })
+        | std::ranges::to<std::vector<std::string_view>>();
+        return v.back();
+    }
     // template <class Base>
     // class AbstractFactory {
 
@@ -88,17 +100,23 @@ namespace eaf {
     // };
 }
 
-template <typename Tag, typename Base>
-Base* eaf::TaggedAbstractFactory<Tag, Base>::make(std::string_view className){
+
+
+template <typename Tag, typename Base, std::meta::info Namespace>
+Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make(std::string_view className){
 
     constexpr auto ctx = std::meta::access_context::unprivileged();
 
-    template for (constexpr auto cls : std::define_static_array(std::meta::members_of(^^::, ctx))){
+    template for (constexpr auto cls : std::define_static_array(std::meta::members_of(Namespace, ctx))){
         if constexpr (std::meta::is_type(cls) && std::meta::is_complete_type(cls)){
             static constexpr auto annotations = std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Tag));
             using Class_t = typename [:cls:];
-            if constexpr (annotations.size() == 1 && std::is_base_of_v<Base, Class_t> ){ // , std::meta::display_string_of(^^Base)
-                if (std::meta::display_string_of(cls) == className){
+            if constexpr (annotations.size() == 1 && std::is_base_of_v<Base, Class_t>){
+                
+                // Strips the :: out of namespaced classes.
+                static constexpr std::string_view prunedClassName = eaf::getClassName<cls>();
+                static constexpr std::string_view clsName = std::meta::display_string_of(cls);
+                if (clsName == className || prunedClassName == className){
                     return new Class_t();
                 }
             }
@@ -108,12 +126,12 @@ Base* eaf::TaggedAbstractFactory<Tag, Base>::make(std::string_view className){
 }
 
 
-template <typename Tag, typename Base>
-std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base>::make_shared(std::string_view className){
+template <typename Tag, typename Base, std::meta::info Namespace>
+std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make_shared(std::string_view className){
     return std::shared_ptr<Base>(make(className));
 }
 
-template <typename Tag, typename Base>
-std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base>::make_unique(std::string_view className){
+template <typename Tag, typename Base, std::meta::info Namespace>
+std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make_unique(std::string_view className){
     return std::unique_ptr<Base>(make(className));
 }
