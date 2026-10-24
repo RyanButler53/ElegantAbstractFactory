@@ -6,5 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options("-freflection")
 
 enable_testing()
-include_directories(inc)
+
+add_subdirectory(inc)
 add_subdirectory(tests)
