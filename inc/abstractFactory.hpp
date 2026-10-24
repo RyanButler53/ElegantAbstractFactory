@@ -14,6 +14,7 @@
 #include <meta>
 #include <type_traits>
 #include <ranges>
+#include <utility>
 #include <memory>
 #include <string_view>
 
@@ -40,8 +41,6 @@ namespace eaf {
         template <typename... Args> 
         Base* make(std::string_view className, Args&&... args);
 
-        // template <std::invocable F, typename... Args> 
-        // double Benchmark::measure(F f, Args&&... args){
         public:
 
         /**
@@ -77,34 +76,6 @@ namespace eaf {
         | std::ranges::to<std::vector<std::string_view>>();
         return v.back();
     }
-    // template <class Base>
-    // class AbstractFactory {
-
-    //     /**
-    //      * @brief Construct a new generic Abstract Factory. The default constructor will construct a factory
-    //      * that can construct objects of any type in the global namespace that both derive from the base class Base
-    //      * Annotations are ignored
-    //      */
-    //     AbstractFactory();
-
-    //     /**
-    //      * @brief Construct a new  Abstract Factory object that constructs objects that
-    //      * are derived classes of Base that are in a specific namespace. Annotations are not used
-    //      * 
-    //      * @param namespaceRef Reflection of a namespace to look for derived classes in
-    //      */
-    //     AbstractFactory(std::meta::info namespaceRef);
-
-    //     /**
-    //      * @brief Construct a shared/unique pointer to the provided class name
-    //      * @todo Make this work with variadic arguments
-    //      * 
-    //      * @param classname Class name of the type to construct
-    //      */
-    //     std::shared_ptr<Base> make_shared(std::string_view classname);
-    //     std::unique_ptr<Base> make_unique(std::string_view classname);
-
-    // };
 }
 
 
@@ -125,7 +96,7 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make(std::string_view cl
                 static constexpr std::string_view prunedClassName = eaf::getClassName<cls>();
                 static constexpr std::string_view clsName = std::meta::display_string_of(cls);
                 if (clsName == className || prunedClassName == className){
-                    return new Class_t(std::forward<Args...>(args)...);
+                    return new Class_t(std::forward<Args>(args)...);
                 }
             }
         }
@@ -137,11 +108,11 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make(std::string_view cl
 template <typename Tag, typename Base, std::meta::info Namespace>
 template <typename... Args>
 std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make_shared(std::string_view className, Args&&... args){
-    return std::shared_ptr<Base>(make(className, std::forward<Args...>(args)...));
+    return std::shared_ptr<Base>(make(className, std::forward<Args>(args)...));
 }
 
 template <typename Tag, typename Base, std::meta::info Namespace>
 template <typename... Args>
 std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make_unique(std::string_view className, Args&&... args){
-    return std::unique_ptr<Base>(make(className, std::forward<Args...>(args)...));
+    return std::unique_ptr<Base>(make(className, std::forward<Args>(args)...));
 }

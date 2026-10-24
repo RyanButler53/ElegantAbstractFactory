@@ -2,7 +2,7 @@
 
 A C++26 Reflection-based header-only Generic Abstract Factory library. 
 
-Often times the Abstract Factory pattern requires a large if-else or switch chain to convert from a string or enum type to an abstract type. This adds an extra step to extending a heirarchy horizontally. The Elegant Abstract Factory changes that: By automatically generating the factory at compile time, you no longer need to add these conditionals or look at a very long chain of if statements
+Often times the Abstract Factory pattern requires a large if-else or switch chain to convert from a string or enum type to an abstract type. This adds an extra step to extending a heirarchy horizontally. The Elegant Abstract Factory changes that: By automatically generating the factory at compile time, you no longer need to add these conditionals or look at a very long chain of if statements. A key limitation is that the arguments of each constructor registered to the factory must be the same. 
 
 ## How it works: 
 
@@ -24,7 +24,7 @@ class Derived1 : public Base {
 };
 
 [[=r]]
-class Derived...  : public Base {
+class DerivedN  : public Base {
  // ...
 };
 
@@ -34,6 +34,6 @@ std::unique_ptr<Base> derived = factory.make_shared("Derived1");
 
 ## Roadmap
 - Register classes from multiple namespaces
-- Improve CMake so that the project can be absorbed via fetch_content
-- Allow arguments (variadic) to the constructors of derived classes
-- Register mappings from type T to Class name to constuct from an identifier T
+    - Could an array template argument to make_shared work? Variadic param is reserved for constructor args 
+- Improve CMake further so that the project can be absorbed via fetch_content
+- Register mappings from type T to Class name to constuct from an identifier

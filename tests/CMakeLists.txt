@@ -8,3 +8,4 @@ endmacro()
 
 EAFTest(globalNamespace)
 EAFTest(namespacedClasses)
+EAFTest(variadicArgs)

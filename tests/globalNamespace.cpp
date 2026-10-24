@@ -32,6 +32,6 @@ TEST_F(TaggedFactoryTest, NonBaseClass){
 }
 
 TEST_F(TaggedFactoryTest, NonexistentClass){
-    std::shared_ptr<Base> derived = factory.make_shared("NotAClass");
+    std::unique_ptr<Base> derived = factory.make_unique("NotAClass");
     EXPECT_EQ(derived, nullptr);
 }
