@@ -2,11 +2,17 @@
 
 A C++26 Reflection-based header-only Generic Abstract Factory library. 
 
-Often times the Abstract Factory pattern requires a large if-else or switch chain to convert from a string or enum type to an abstract type. This adds an extra step to extending a heirarchy horizontally. The Elegant Abstract Factory changes that: By automatically generating the factory at compile time, you no longer need to add these conditionals or write a long switch: The compiler automatically adds these to the abstract factory. A key limitation is that the types of arguments of each constructor registered to the factory must be the same. 
+The Abstract Factory pattern often requires a large if-else or switch chain to convert from a string or enum type to an pointer to an abstract interface. This adds an extra step to extending a heirarchy horizontally. The Elegant Abstract Factory bypasses this: By automatically using class type annotations and static reflection, the factory method can be generated at compile time. A key limitation is that the types of arguments of each constructor registered to the factory must be the same. 
 
 ## How it works: 
 
-Automatically generates a factory make function to create pointers to a derived class. Can create an object just based off the string class name.  All classes "registered" to the factory are registered at compile time using annotations.  
+The `eaf::AbstractFactory::make` function looks through the provided namespace (via `members_of`) and filters for reflections that meet 4 conditions:
+    - The reflected entity is a complete type
+    - The reflected entity as an annotation of type `Tag` (meaning the factory has registered the type)
+    - The reflected entity is a derived class of `Base`
+    - The reflected entity matches the name of the class in source code (with or without the `::` symbols) or matches the Mapping annotation.
+
+It then forwards the rest of the arguments to the class's constructor 
 
 ## Example
 ```
