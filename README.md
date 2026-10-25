@@ -23,17 +23,17 @@ class Derived1 : public Base {
  // ...
 };
 
-[[=r]]
+[[=r, eaf::String("derived class")]]
 class DerivedN  : public Base {
  // ...
 };
 
 eaf::AbstractFactory<Register, Base> factory;
 std::unique_ptr<Base> derived = factory.make_shared("Derived1");
+std::shared_ptr<Base> stringTag(eaf::String("derived class"));
 ```
 
 ## Roadmap
 - Register classes from multiple namespaces
     - Could an array template argument to make_shared work? Variadic param is reserved for constructor args 
 - Improve CMake further so that the project can be absorbed via fetch_content
-- Register mappings from type T(string, int, enum)

@@ -17,6 +17,7 @@
 #include <utility>
 #include <memory>
 #include <string_view>
+#include <cstring>
 
 namespace eaf {
 
@@ -101,9 +102,21 @@ namespace eaf {
         | std::ranges::to<std::vector<std::string_view>>();
         return v.back();
     }
-}
+    
+    /**
+     * @brief Special Case for string based annotations since string memory is dynamic
+     * 
+     */
+    struct String {
+        const char* name;
 
+        consteval String(std::string_view s): name(std::define_static_string(s)) {}
 
+        constexpr bool operator==(const String& other){
+            return std::strcmp(name, other.name) == 0;
+        }
+
+    };
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
@@ -113,6 +126,7 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(std::strin
 
     template for (constexpr auto cls : std::define_static_array(std::meta::members_of(Namespace, ctx))){
         if constexpr (std::meta::is_type(cls) && std::meta::is_complete_type(cls)){
+            // Gets all annotations of type "Tag" that are registered to the factory
             static constexpr auto annotations = std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Tag));
             using Class_t = typename [:cls:];
             if constexpr (!annotations.empty() && std::is_base_of_v<Base, Class_t>){
@@ -143,15 +157,18 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping cl
             if constexpr (inFactory && std::is_base_of_v<Base, Class_t>){
                 // Loop over all annotations matching type Mapping to match with input parameter
                 template for (constexpr auto mapping : std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Mapping))){
-                    if (mapping == classIdentifier){
+                    if ([:std::meta::constant_of(mapping):] == classIdentifier){
                         return new Class_t(std::forward<Args>(args)...);
                     }
                 }
             }
         }
     }
+    return nullptr;
+}
 }
 
+// Implementations
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
