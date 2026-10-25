@@ -103,4 +103,3 @@ TEST_F(CustomMappingsTest, FromClassNameSV){
     EXPECT_TRUE(std::dynamic_pointer_cast<Mappings::StringTagName>(stringName));
 
 }
-
