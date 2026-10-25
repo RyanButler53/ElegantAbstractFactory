@@ -36,4 +36,4 @@ std::unique_ptr<Base> derived = factory.make_shared("Derived1");
 - Register classes from multiple namespaces
     - Could an array template argument to make_shared work? Variadic param is reserved for constructor args 
 - Improve CMake further so that the project can be absorbed via fetch_content
-- Register mappings from type T to Class name to constuct from an identifier
+- Register mappings from type T(string, int, enum)

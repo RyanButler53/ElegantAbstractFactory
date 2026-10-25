@@ -25,9 +25,10 @@ namespace eaf {
      * 
      * @tparam Tag: Annotation type of the tag for each class
      * @tparam Base: Class that all tagged types must inherit from
+     * @tparam Mapping: Type of alternaive mapping to class name (t)
      * @tparam Namespace: Reflection of the namespace to look in for types
      */
-    template <class Tag, class Base, std::meta::info Namespace = ^^::>
+    template <class Tag, class Base, std::meta::info Namespace = ^^::, class Mapping = int >
     class TaggedAbstractFactory {
 
         /**
@@ -41,6 +42,9 @@ namespace eaf {
         template <typename... Args> 
         Base* make(std::string_view className, Args&&... args);
 
+        template <typename... Args>
+        Base* make(Mapping classMap, Args&&... args);
+
         public:
 
         /**
@@ -53,7 +57,6 @@ namespace eaf {
 
         /**
          * @brief Construct a shared/unique pointer to the provided class name
-         * @todo Make this work with variadic arguments
          * 
          * @param classname Class name of the type to construct
          */
@@ -63,8 +66,30 @@ namespace eaf {
         template <typename... Args>
         std::unique_ptr<Base> make_unique(std::string_view classname, Args&&... args);
 
+
+        /**
+         * @brief Construct a shared/unique pointer to the type specified by the class identifier. 
+         * The class identifier is an annotation of the class of type \ref Mapping
+         * 
+         * @tparam Args Variadic type for all arguments
+         * @param classIdentifier Class identifier from the annotation. 
+         * @param args Arguments forwarded to std::make_shared<classIdentifier>
+         * @return std::shared_ptr<Base> 
+         */
+        template <typename... Args>
+        std::shared_ptr<Base> make_shared(Mapping classIdentifier, Args&&... args);
+
+        template <typename... Args>
+        std::unique_ptr<Base> make_unique(Mapping classIdentifier, Args&&... args);
+
     };
     
+    /**
+     * @brief Get the class name from a full class name involving namespaces and :: operators
+     * 
+     * @tparam R Reflection of type to get name of. 
+     * @return consteval std::string_view of the class name. Runs at compile time. 
+     */
     template <std::meta::info R>
     consteval std::string_view getClassName(){
         using namespace std::literals;
@@ -80,9 +105,9 @@ namespace eaf {
 
 
 
-template <typename Tag, typename Base, std::meta::info Namespace>
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make(std::string_view className, Args&&... args){
+Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(std::string_view className, Args&&... args){
 
     constexpr auto ctx = std::meta::access_context::unprivileged();
 
@@ -90,7 +115,7 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make(std::string_view cl
         if constexpr (std::meta::is_type(cls) && std::meta::is_complete_type(cls)){
             static constexpr auto annotations = std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Tag));
             using Class_t = typename [:cls:];
-            if constexpr (annotations.size() == 1 && std::is_base_of_v<Base, Class_t>){
+            if constexpr (!annotations.empty() && std::is_base_of_v<Base, Class_t>){
                 
                 // Strips the :: out of namespaced classes.
                 static constexpr std::string_view prunedClassName = eaf::getClassName<cls>();
@@ -105,14 +130,49 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make(std::string_view cl
 }
 
 
-template <typename Tag, typename Base, std::meta::info Namespace>
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make_shared(std::string_view className, Args&&... args){
+Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping classIdentifier, Args&&... args){
+    constexpr auto ctx = std::meta::access_context::unprivileged();
+    template for (constexpr auto cls : std::define_static_array(std::meta::members_of(Namespace, ctx))){
+        if constexpr (std::meta::is_type(cls) && std::meta::is_complete_type(cls)){
+
+            // Check if type is annotated to be in the factory
+            static constexpr bool inFactory = !std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Tag)).empty();
+            using Class_t = typename [:cls:];
+            if constexpr (inFactory && std::is_base_of_v<Base, Class_t>){
+                // Loop over all annotations matching type Mapping to match with input parameter
+                template for (constexpr auto mapping : std::define_static_array(std::meta::annotations_of_with_type(cls, ^^Mapping))){
+                    if (mapping == classIdentifier){
+                        return new Class_t(std::forward<Args>(args)...);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
+template <typename... Args>
+std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_shared(std::string_view className, Args&&... args){
     return std::shared_ptr<Base>(make(className, std::forward<Args>(args)...));
 }
 
-template <typename Tag, typename Base, std::meta::info Namespace>
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace>::make_unique(std::string_view className, Args&&... args){
+std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_unique(std::string_view className, Args&&... args){
     return std::unique_ptr<Base>(make(className, std::forward<Args>(args)...));
+}
+
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
+template <typename... Args>
+std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_shared(Mapping classIdentifier, Args&&... args){
+    return std::shared_ptr<Base>(make(classIdentifier, std::forward<Args>(args)...));
+}
+
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
+template <typename... Args>
+std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_unique(Mapping classIdentifier, Args&&... args){
+    return std::unique_ptr<Base>(make(classIdentifier, std::forward<Args>(args)...));
 }
