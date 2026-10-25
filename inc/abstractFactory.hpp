@@ -46,6 +46,16 @@ namespace eaf {
         template <typename... Args>
         Base* make(Mapping classMap, Args&&... args);
 
+
+        /**
+         * @brief Get the class name from a full class name involving namespaces and :: operators
+         * 
+         * @tparam R Reflection of type to get name of. 
+         * @return consteval std::string_view of the class name. Runs at compile time. 
+         */
+        template <std::meta::info R>
+        consteval std::string_view getClassName();
+
         public:
 
         /**
@@ -83,25 +93,8 @@ namespace eaf {
         template <typename... Args>
         std::unique_ptr<Base> make_unique(Mapping classIdentifier, Args&&... args);
 
+        static_assert(std::meta::is_namespace(Namespace), "\"Namespace\" template argument must be a reflection of a namespace");
     };
-    
-    /**
-     * @brief Get the class name from a full class name involving namespaces and :: operators
-     * 
-     * @tparam R Reflection of type to get name of. 
-     * @return consteval std::string_view of the class name. Runs at compile time. 
-     */
-    template <std::meta::info R>
-    consteval std::string_view getClassName(){
-        using namespace std::literals;
-        static constexpr std::string_view delim = "::"sv;
-        auto v = std::views::split(std::meta::display_string_of(R), delim)
-        | std::views::transform([](auto&& subrange){
-            return std::string_view(subrange);
-        })
-        | std::ranges::to<std::vector<std::string_view>>();
-        return v.back();
-    }
     
     /**
      * @brief Special Case for string based annotations since string memory is dynamic
@@ -132,7 +125,7 @@ Base* eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make(std::string_view
             if constexpr (!annotations.empty() && std::is_base_of_v<Base, Class_t>){
                 
                 // Strips the :: out of namespaced classes.
-                static constexpr std::string_view prunedClassName = eaf::getClassName<cls>();
+                static constexpr std::string_view prunedClassName = getClassName<cls>();
                 static constexpr std::string_view clsName = std::meta::display_string_of(cls);
                 if (clsName == className || prunedClassName == className){
                     return new Class_t(std::forward<Args>(args)...);
@@ -168,7 +161,18 @@ Base* eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping classIde
 }
 }
 
-// Implementations
+template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
+template <std::meta::info R>
+consteval std::string_view eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::getClassName(){
+    using namespace std::literals;
+    static constexpr std::string_view delim = "::"sv;
+    auto v = std::views::split(std::meta::display_string_of(R), delim)
+    | std::views::transform([](auto&& subrange){
+        return std::string_view(subrange);
+    })
+    | std::ranges::to<std::vector<std::string_view>>();
+    return v.back();
+}
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
