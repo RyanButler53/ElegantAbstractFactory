@@ -22,7 +22,7 @@
 namespace eaf {
 
     /**
-     * @brief Abstract Factory 
+     * @brief Abstract Factory class for creating derived classes of a specified base. 
      * 
      * @tparam Tag: Annotation type of the tag for each class
      * @tparam Base: Class that all tagged types must inherit from
@@ -30,7 +30,7 @@ namespace eaf {
      * @tparam Namespace: Reflection of the namespace to look in for types
      */
     template <class Tag, class Base, std::meta::info Namespace = ^^::, class Mapping = int >
-    class TaggedAbstractFactory {
+    class AbstractFactory {
 
         /**
          * @brief Internal function to create the raw pointer to the derived class. Gets wrapped 
@@ -54,7 +54,7 @@ namespace eaf {
          * and are annotated with class Tag. 
          * 
          */
-        TaggedAbstractFactory() = default;
+        AbstractFactory() = default;
 
         /**
          * @brief Construct a shared/unique pointer to the provided class name
@@ -120,7 +120,7 @@ namespace eaf {
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(std::string_view className, Args&&... args){
+Base* eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make(std::string_view className, Args&&... args){
 
     constexpr auto ctx = std::meta::access_context::unprivileged();
 
@@ -146,7 +146,7 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(std::strin
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping classIdentifier, Args&&... args){
+Base* eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping classIdentifier, Args&&... args){
     constexpr auto ctx = std::meta::access_context::unprivileged();
     template for (constexpr auto cls : std::define_static_array(std::meta::members_of(Namespace, ctx))){
         if constexpr (std::meta::is_type(cls) && std::meta::is_complete_type(cls)){
@@ -172,24 +172,24 @@ Base* eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping cl
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_shared(std::string_view className, Args&&... args){
+std::shared_ptr<Base> eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make_shared(std::string_view className, Args&&... args){
     return std::shared_ptr<Base>(make(className, std::forward<Args>(args)...));
 }
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_unique(std::string_view className, Args&&... args){
+std::unique_ptr<Base> eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make_unique(std::string_view className, Args&&... args){
     return std::unique_ptr<Base>(make(className, std::forward<Args>(args)...));
 }
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-std::shared_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_shared(Mapping classIdentifier, Args&&... args){
+std::shared_ptr<Base> eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make_shared(Mapping classIdentifier, Args&&... args){
     return std::shared_ptr<Base>(make(classIdentifier, std::forward<Args>(args)...));
 }
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
-std::unique_ptr<Base> eaf::TaggedAbstractFactory<Tag, Base, Namespace, Mapping>::make_unique(Mapping classIdentifier, Args&&... args){
+std::unique_ptr<Base> eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make_unique(Mapping classIdentifier, Args&&... args){
     return std::unique_ptr<Base>(make(classIdentifier, std::forward<Args>(args)...));
 }

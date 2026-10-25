@@ -25,11 +25,11 @@ namespace N {
 
 class NamespacedClassesTest : public ::testing::Test {
     protected:
-    eaf::TaggedAbstractFactory<Factory, Base, ^^N> factory;
+    eaf::AbstractFactory<Factory, Base, ^^N> factory;
 };
 
 TEST_F(NamespacedClassesTest, ValidClasses){
-    std::shared_ptr<Base> derived = factory.make_shared("Derived4");
+    std::shared_ptr derived = factory.make_shared("Derived4");
     ASSERT_TRUE(derived);
     // Class can be built without the namespaced name
     EXPECT_EQ(derived->structName(), "N::Derived4");
@@ -40,13 +40,13 @@ TEST_F(NamespacedClassesTest, ValidClasses){
 }
 
 TEST_F(NamespacedClassesTest, GlobalNamespace){
-    std::shared_ptr<Base> derived = factory.make_shared("Derived1");
+    std::shared_ptr derived = factory.make_shared("Derived1");
     EXPECT_FALSE(derived);
 }
 
 // Nested namespace classes are not supported. 
 TEST_F(NamespacedClassesTest, NestedNamespaces){
-    std::unique_ptr<Base> derived = factory.make_unique("Nested::Derived5");
+    std::unique_ptr derived = factory.make_unique("Nested::Derived5");
 
     EXPECT_FALSE(derived);
 }

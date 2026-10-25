@@ -40,14 +40,14 @@ namespace Mappings {
 
 class CustomMappingsTest : public ::testing::Test{
     protected:
-    eaf::TaggedAbstractFactory<Factory, Base, ^^Mappings, int> intFactory;
-    eaf::TaggedAbstractFactory<Factory, Base, ^^Mappings, DERIVED_CLASS> enumFactory;
-    eaf::TaggedAbstractFactory<Factory, Base, ^^Mappings, eaf::String> strFactory;
+    eaf::AbstractFactory<Factory, Base, ^^Mappings, int> intFactory;
+    eaf::AbstractFactory<Factory, Base, ^^Mappings, DERIVED_CLASS> enumFactory;
+    eaf::AbstractFactory<Factory, Base, ^^Mappings, eaf::String> strFactory;
 
 };
 
 TEST_F(CustomMappingsTest, FromInteger){
-    std::shared_ptr<Base> lcn = intFactory.make_shared(70);
+    std::shared_ptr lcn = intFactory.make_shared(70);
     EXPECT_TRUE(lcn);
     EXPECT_TRUE(std::dynamic_pointer_cast<Mappings::LongComplicatedName>(lcn));
 }
