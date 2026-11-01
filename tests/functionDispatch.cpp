@@ -13,7 +13,6 @@ FunctionTag registerDispatch;
 
 namespace Fns {
 
-
 int add [[=registerDispatch, =eaf::String("add")]] (int a, int b) {
     return a + b;
 }
@@ -57,7 +56,7 @@ TEST_F(FunctionDispatchTest, tryDispatch){
     EXPECT_EQ(err.error(), "X and Y must not be equal");
 }
 
-TEST_F(FunctionDispatchTest, currying){
+TEST_F(FunctionDispatchTest, simpleCurry){
     auto curried = dispatcher.curry<int, int>(eaf::String("add"));
     EXPECT_EQ(curried(5, 10), 15);
 }
