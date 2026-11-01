@@ -3,7 +3,7 @@
 #include <string>
 #include <format>
 #include <string_view>
-#include "taggedDispatch.hpp"
+#include "functionDispatch.hpp"
 #include "string.hpp"
 #include <gtest/gtest.h>
 
@@ -55,4 +55,9 @@ TEST_F(FunctionDispatchTest, tryDispatch){
     
     EXPECT_FALSE(err.has_value());
     EXPECT_EQ(err.error(), "X and Y must not be equal");
+}
+
+TEST_F(FunctionDispatchTest, currying){
+    auto curried = dispatcher.curry<int, int>(eaf::String("add"));
+    EXPECT_EQ(curried(5, 10), 15);
 }

@@ -4,6 +4,7 @@
 #include <print>
 #include <utility>
 #include <ranges>
+#include <functional>
 
 /**
  * @brief 
@@ -56,6 +57,9 @@ namespace eaf {
          */
         template <typename... Args>
         std::expected<R, std::string> try_dispatch(Mapping fn, Args&&... args);
+
+        template <typename... Args>
+        std::function<R(Args...)> curry(Mapping fn);
 
         private:
         consteval std::span<const std::meta::info> registeredFunctions();
@@ -112,4 +116,8 @@ std::expected<R, std::string> eaf::FunctionDispatcher<Registration, R, Mapping, 
 }
 
 // Curry? How to turn into a functor? 
-
+template <typename Registration, typename R, class Mapping, std::meta::info Namespace>
+template <typename... Args>
+std::function<R(Args...)> eaf::FunctionDispatcher<Registration, R, Mapping, Namespace>::curry(Mapping fn){
+    return [this, fn](Args... args){return dispatch(fn, std::forward<Args>(args)...);};
+}
