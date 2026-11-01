@@ -66,10 +66,6 @@ TEST_F(CustomMappingsTest, FromClassName){
     std::shared_ptr className = intFactory.make_shared("LongComplicatedName");
     EXPECT_TRUE(className);
     EXPECT_TRUE(std::dynamic_pointer_cast<Mappings::LongComplicatedName>(className));
-
-    std::shared_ptr fullClassName = intFactory.make_shared("Mappings::LongComplicatedName");
-    EXPECT_TRUE(fullClassName);
-    EXPECT_TRUE(std::dynamic_pointer_cast<Mappings::LongComplicatedName>(fullClassName));
 }
 
 TEST_F(CustomMappingsTest, FromEnum){
@@ -97,9 +93,4 @@ TEST_F(CustomMappingsTest, FromClassNameSV){
     std::shared_ptr stringName = strFactory.make_shared("StringTagName");
     EXPECT_TRUE(stringName);
     EXPECT_TRUE(std::dynamic_pointer_cast<Mappings::StringTagName>(stringName));
-
-    stringName = strFactory.make_shared("Mappings::StringTagName");
-    EXPECT_TRUE(stringName);
-    EXPECT_TRUE(std::dynamic_pointer_cast<Mappings::StringTagName>(stringName));
-
 }

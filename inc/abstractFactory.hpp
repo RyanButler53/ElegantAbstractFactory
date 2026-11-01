@@ -17,8 +17,9 @@
 #include <utility>
 #include <memory>
 #include <string_view>
-#include <cstring>
 #include <ranges>
+#include "string.hpp"
+#include <print>
 
 namespace eaf {
 
@@ -46,16 +47,6 @@ namespace eaf {
 
         template <typename... Args>
         Base* make(Mapping classMap, Args&&... args);
-
-
-        /**
-         * @brief Get the class name from a full class name involving namespaces and :: operators
-         * 
-         * @tparam R Reflection of type to get name of. 
-         * @return consteval std::string_view of the class name. Runs at compile time. 
-         */
-        template <std::meta::info R>
-        consteval std::string_view getClassName();
 
         /**
          * @brief Gets a span of all classes in namespace \ref Namespace that are candidates for calling constructors
@@ -87,7 +78,6 @@ namespace eaf {
         template <typename... Args>
         std::unique_ptr<Base> make_unique(std::string_view classname, Args&&... args);
 
-
         /**
          * @brief Construct a shared/unique pointer to the type specified by the class identifier. 
          * The class identifier is an annotation of the class of type \ref Mapping
@@ -106,20 +96,6 @@ namespace eaf {
         static_assert(std::meta::is_namespace(Namespace), "\"Namespace\" template argument must be a reflection of a namespace");
     };
     
-    /**
-     * @brief Special Case for string based annotations since string memory is dynamic
-     * 
-     */
-    struct String {
-        const char* name;
-
-        consteval String(std::string_view s): name(std::define_static_string(s)) {}
-
-        constexpr bool operator==(const String& other){
-            return std::strcmp(name, other.name) == 0;
-        }
-
-    };
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
 template <typename... Args>
@@ -128,11 +104,8 @@ Base* eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make(std::string_view
     constexpr auto ctx = std::meta::access_context::unprivileged();
     template for (constexpr auto cls : registeredClasses()){
 
-        // Strips the :: out of namespaced classes.
-        static constexpr std::string_view prunedClassName = getClassName<cls>();
-        static constexpr std::string_view clsName = std::meta::display_string_of(cls);
         using Class_t = typename [:cls:];
-        if (clsName == className || prunedClassName == className){
+        if (std::meta::identifier_of(cls) == className){
             return new Class_t(std::forward<Args>(args)...);
         }
     }
@@ -154,19 +127,6 @@ Base* eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::make(Mapping classIde
     }
     return nullptr;
 }
-}
-
-template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
-template <std::meta::info R>
-consteval std::string_view eaf::AbstractFactory<Tag, Base, Namespace, Mapping>::getClassName(){
-    using namespace std::literals;
-    static constexpr std::string_view delim = "::"sv;
-    auto v = std::views::split(std::meta::display_string_of(R), delim)
-    | std::views::transform([](auto&& subrange){
-        return std::string_view(subrange);
-    })
-    | std::ranges::to<std::vector<std::string_view>>();
-    return v.back();
 }
 
 template <typename Tag, typename Base, std::meta::info Namespace, class Mapping>
