@@ -29,7 +29,7 @@ int mayThrow [[=registerDispatch, =eaf::String("maythrow")]](int x, int y){
 
 class FunctionDispatchTest : public ::testing::Test {
     protected:
-    eaf::FunctionDispatcher<FunctionTag, int, eaf::String, ^^Fns> dispatcher;
+    eaf::FunctionDispatcher<FunctionTag, eaf::String, ^^Fns, int(int, int)> dispatcher;
 };
 
 TEST_F(FunctionDispatchTest, add){
@@ -57,6 +57,6 @@ TEST_F(FunctionDispatchTest, tryDispatch){
 }
 
 TEST_F(FunctionDispatchTest, simpleCurry){
-    auto curried = dispatcher.curry<int, int>(eaf::String("add"));
+    auto curried = dispatcher(eaf::String("add"));
     EXPECT_EQ(curried(5, 10), 15);
 }

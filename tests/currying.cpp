@@ -82,9 +82,8 @@ int reduce1(Curry::Op op, std::vector<int> v, int init){
 }
 
 int reduce2(Curry::Op op, std::vector<int> v, int init){
-    eaf::FunctionDispatcher<FunctionTag, int, Curry::Op, ^^Curry> dispatcher;
-    auto f = dispatcher.curry<int, int>(op);
-    return std::reduce(v.begin(), v.end(), init, f);
+    eaf::FunctionDispatcher<FunctionTag, Curry::Op, ^^Curry, int(int, int)> dispatcher;
+    return std::reduce(v.begin(), v.end(), init, dispatcher(op));
 }
 
 
