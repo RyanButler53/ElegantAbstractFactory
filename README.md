@@ -1,18 +1,24 @@
 # Elegant Abstract Factory
 
-A C++26 Reflection-based header-only Generic Abstract Factory library. 
+A C++26 Reflection-based header-only Generic Abstract Factory library and Tagged Dispatch libary. 
 
 The Abstract Factory pattern often requires a large if-else or switch chain to convert from a string or enum type to an pointer to an abstract interface. This adds an extra step to extending a heirarchy horizontally. The Elegant Abstract Factory bypasses this: By automatically using class type annotations and static reflection, the factory method can be generated at compile time. A key limitation is that the types of arguments of each constructor registered to the factory must be the same. 
+
+Sometimes instead of dispatching to constructors of classes, code dispatches to various functions and forwards the arguments to the function. This is what the `FunctionDispatcher` is for. The function dispatcher has a member function `R dispatch(function, args)`. The function dispatcher can also participate in currying to return a function with the specified signature in the template signature via the call operator.  The dispatcher also has an overload that returns `std::expected<R, std::string>` to handle functions that may throw exceptions. 
 
 ## How it works: 
 
 The `eaf::AbstractFactory::make` function looks through the provided namespace (via `members_of`) and filters for reflections that meet 4 conditions:
     - The reflected entity is a complete type
-    - The reflected entity as an annotation of type `Tag` (meaning the factory has registered the type)
+    - The reflected entity has an annotation of type `Tag` (meaning the factory has registered the type)
     - The reflected entity is a derived class of `Base`
     - The reflected entity matches the name of the class in source code (with or without the `::` symbols) or matches the Mapping annotation.
 
 It then forwards the rest of the arguments to the class's constructor 
+
+The `eaf::FunctionDispatcher::dispatch` function works similarly: It looks through the provided namespace and filters for 2 similar conditions: 
+    - The reflected entity is a function
+    - The reflected entity has an annotation of type `Tag`
 
 ## Example
 ```
@@ -44,6 +50,8 @@ std::unique_ptr intTag = factory.make_unique(32); // CTAD works here too
 Sometimes the entire class name is long or the class is set to be constructed from a another type (typically a string, integral type or enum).
 The last template argument of `eaf::AbstractFactory` is `Mapping`, which is the type of an alternative way to construct the object.  To enable an alternative
 way of constructing the object, add an additional annotation in the class definition to provide the alternative mapping. Since strings have dynamic storage allocation, you must use eaf::String, which allows a string to be used and mapped to for reflection annotations. There can be multiple different annotated mappings for a class, but a factory with mapping type `Mapping` can only construct from annotations with type `Mapping`. Two different factories can produce the same class if the class is annotated with two types. (See customMappings.cpp unit test)
+
+The alternative mappings also work with the `eaf::FunctionDispatcher`. See the functionDispatch.cpp unit test and currying.cpp unit tests for examples of using tagged dispatch for automatic currying. 
 
 
 ## Roadmap
